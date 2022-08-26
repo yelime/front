@@ -57,6 +57,7 @@
     </v-col>
     <infinite-loading v-if="!isLoding" :identifier="infiniteId" @infinite="onScroll"></infinite-loading>
   </v-row>
+  <div v-if="isLoding" class="lds-circle"><div></div></div>  
 </div>
 </template>
 
@@ -73,7 +74,7 @@ export default {
     return {
       imgUrl:`${this.$imgUrl}`,
       productHeight: 0,
-      isLoding: true,
+      isLoding: false,
       infiniteId: +new Date(),
       filter : 255,
       page: 0,
@@ -115,11 +116,6 @@ export default {
       ]
     }
   },
-  watch:{
-    productHeight:function(){
-      this.nextPage();
-    }
-  }, 
   mounted() {
     this.loadProduct(-1)
     window.addEventListener("mouseup", this.onMouseUp)
@@ -158,7 +154,7 @@ export default {
           if(res.data.length){
             this.product = this.product.concat(res.data);
             $state.loaded()
-            if(res.data.length / PRODUCT_LEN < 1){
+            if(res.data.length / this.pageLen < 1){
               $state.complete()
             }
           }
@@ -169,16 +165,27 @@ export default {
       })
     },
 
-
+    loadClear(){
+      setTimeout(()=>{
+        this.isLoding=false
+          
+      },2000)
+    },
     getProduct(){ 
       axios.get(`${this.$baseUrl}/${this.filter}/${this.page*this.pageLen}`)
       .then((res)=>{
         this.product = this.product.concat(res.data);
+        if(res.data.length / this.pageLen < 1){
+          this.loadClear()
+        }
       })
       setTimeout(()=>{
         this.productHeight=this.$refs.pe.clientHeight
+        if(this.isLoding){
+          this.nextPage()
+        }
         this.infiniteId += 1
-      },100)
+      },500)
     },
     nextPage(){
       if(this.productHeight<document.documentElement.clientHeight){ 
@@ -186,16 +193,20 @@ export default {
         this.getProduct()
       }
       else {
-        this.isLoding=false
+        this.loadClear()
       }
     },
     loadProduct(filters){
-      window.scrollTo(0,0)
-      this.page=0
-      this.filter =filters==-1?255: Math.pow(2,filters)
-      this.infiniteId += 1
-      this.product = []
-      this.getProduct()
+      if(!this.isLoding){
+        this.isLoding= true
+        window.scrollTo(0,0)
+        this.page=0
+        this.filter =filters==-1?255: Math.pow(2,filters)
+        this.infiniteId += 1
+        this.product = []
+        this.getProduct()
+      }
+
     },
 
 
@@ -354,5 +365,47 @@ export default {
 .product-thumb-comment>div>img{
   width:20px;
   height: 20px;
+}
+
+
+.lds-circle {
+  display: inline-block;
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: 11111111;
+  background-color: yellow;
+  
+  opacity: 0.8;
+  transform: translateZ(1px);
+}
+.lds-circle > div {
+  display: inline-block;
+  position:fixed;
+  top: calc(50% - 100px);
+  left:calc(50% - 100px);
+  width: 200px;
+  height: 200px;
+  margin: 8px;
+  border-radius: 50%;
+  background: #cef;
+  animation: lds-circle 2.4s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+}
+@keyframes lds-circle {
+  0%, 100% {
+    animation-timing-function: cubic-bezier(0.5, 0, 1, 0.5);
+  }
+  0% {
+    transform: rotateY(0deg);
+  }
+  50% {
+    transform: rotateY(1800deg);
+    animation-timing-function: cubic-bezier(0, 0.5, 0.5, 1);
+  }
+  100% {
+    transform: rotateY(3600deg);
+  }
 }
 </style>
