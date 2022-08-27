@@ -1,5 +1,7 @@
 <template>
 <div>
+
+
   <div v-if="isScrollUp" class="top-menu">
     <div class="header">
       <div style="display: flex;">
@@ -31,6 +33,8 @@
       </div>
     </div>
   </div>
+
+
   <v-row ref="pe" class="products" dense>
     <v-col v-for="(item,i) in product" :key="i" class="product" cols="12" md="4" sm="6" xs="12">
       <img :src="item.img==null?'':`${imgUrl}`+item.img" @error="defaultImg"/>
@@ -57,6 +61,8 @@
     </v-col>
     <infinite-loading v-if="!isLoding" :identifier="infiniteId" @infinite="onScroll"></infinite-loading>
   </v-row>
+
+
   <div v-if="isLoding" class="lds-circle"><div></div></div>  
 </div>
 </template>
@@ -75,15 +81,21 @@ export default {
       imgUrl:`${this.$imgUrl}`,
       productHeight: 0,
       isLoding: false,
+      
       infiniteId: +new Date(),
       filter : 255,
       page: 0,
       pageLen: 10,
+
       scrollPos: 0,
       isScrollUp: true,
+
+
       isDragging: false,
       cursorPos: [0, 0],
       el: null,
+
+
       chooseNum:-1,
       chooseStyle:{
         "color":"black",
@@ -125,11 +137,12 @@ export default {
     window.removeEventListener("mouseup", this.onMouseUp);
   },
   methods:{
+    //만약 이미지 경로가 정해지지 않았을 경우 표시되는 이미지
     defaultImg(e){
       e.target.src = require(`@/assets/reversaltriangle.png`)
     },
 
-
+    //스크롤 다운 메뉴 숨김 / 스크롤 업 메뉴를 표시하는 기능
     showMenu () {
       const currentScrollPosition = window.pageYOffset || document.documentElement.scrollTop
       
@@ -140,12 +153,13 @@ export default {
       this.scrollPos = currentScrollPosition
     },
 
+    //메뉴 클릭시 데이터 필터링을 한다
     filterApply(i){
       this.chooseNum=i;
       this.loadProduct(i);
     },
 
-
+    //리스트 페이징을 스크롤 내릴 시 제품을 10개 추가하는 방식
   	onScroll($state){
       this.page++;
       axios.get(`${this.$baseUrl}/${this.filter}/${this.page*this.pageLen}`)
@@ -164,11 +178,13 @@ export default {
         }, 500)
       })
     },
-
+    //데이터를 받아오는 도중 메뉴를 클릭시 이전 메뉴에서 불러오던 것을
+    //이어서 받아와 결과값이 이상해 지는 경우를 방지하기 위함
+    //해결 방안으로 비동기화를 활용해서 로딩이 끝날때까지 동작을
+    //제안하거나 데이터를 한번에 받아 client측에서 10개씩 끝는 방식
     loadClear(){
       setTimeout(()=>{
         this.isLoding=false
-          
       },2000)
     },
     getProduct(){ 
@@ -187,6 +203,10 @@ export default {
         this.infiniteId += 1
       },500)
     },
+    //이거는 10개로 제안된 페이징 처리시 한 페이지에 3열4행 상황에서 2개의 빈 
+    //공간을 채우지 못하고 스크롤도 나오지 않아 10개만 나오는 상황을
+    //대처하기 위해서 처음 10개를 받고 스크롤이 생기지 않을 시
+    //스크롤이 생길때까지 다음 10개를 받고 로딩을 끝낸다. 
     nextPage(){
       if(this.productHeight<document.documentElement.clientHeight){ 
         this.page++;
@@ -196,22 +216,23 @@ export default {
         this.loadClear()
       }
     },
+    //메뉴 클릭시 데이터를 초기화하고 필터를 적용해서 받는다.
     loadProduct(filters){
       if(!this.isLoding){
         this.isLoding= true
         window.scrollTo(0,0)
         this.page=0
+        //필터는 비트를 활용해서 확인
         this.filter =filters==-1?255: Math.pow(2,filters)
         this.infiniteId += 1
         this.product = []
         this.getProduct()
       }
-
     },
 
 
 
-
+    /** s 메뉴 좌우 스크롤  */
     /** @param {MouseEvent} ev */
     onMouseDown(ev) {
       this.cursorPos = [ev.pageX, ev.pageY];
@@ -240,13 +261,14 @@ export default {
         });
       });
     },
-
+    /** e 메뉴 좌우 스크롤  */
 
   }
 }
 </script>
 
 <style>
+/** s 스크롤 다운시 숨겨지는 영역 */
 .top-menu{
   position: fixed;
   background-color: white;
@@ -311,8 +333,9 @@ export default {
   position: absolute;
   right: 10px;
 }
+/** e 스크롤 다운시 숨겨지는 영역 */
 
-
+/** s 전송받은 정보를 표시해 주는 부분 */
 .products{
   padding:130px 10px 10px 10px;
 }
@@ -339,7 +362,7 @@ export default {
   color:red;
   border:1px solid red;
   border-radius: 5px;
-  font-size: 0.2em;
+  font-size: 10px;
   padding: 0px 5px;
   width: fit-content;
 }
@@ -366,8 +389,9 @@ export default {
   width:20px;
   height: 20px;
 }
+/** e 전송받은 정보를 표시해 주는 부분 */
 
-
+/** s 로딩 페이지 */
 .lds-circle {
   display: inline-block;
   position: fixed;
@@ -408,4 +432,5 @@ export default {
     transform: rotateY(3600deg);
   }
 }
+/** e 로딩 페이지 */
 </style>
